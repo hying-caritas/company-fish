@@ -27,13 +27,12 @@
       (format " (%s)" annotation))))
 
 (defun company-fish--prefix ()
-  (when (and (-contains? company-fish-enabled-modes major-mode)) ;; not inside string
-    (let ((prefix (company-grab-symbol))
-          (cmd (buffer-substring
-                (line-beginning-position)
-                (point))))
-      (cond ((s-prefix? "-" prefix) (cons prefix t)) ;; command line option
-            ((s-equals? prefix cmd) prefix)))));; command
+  (when (and (-contains? company-fish-enabled-modes major-mode)
+	     (/= (save-excursion (company-fish--bol)
+				 (skip-syntax-forward "-")
+				 (point))
+		 (point)))
+    (company-grab-symbol)))
 
 (defun company-fish--bol ()
   (cl-case major-mode
