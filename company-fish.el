@@ -10,6 +10,8 @@
 
 (defvar company-fish-enabled-modes '(shell-mode eshell-mode) "enabled modes.")
 
+(defvar company-fish-extra-completion-functions nil "extra completion functions")
+
 (defun company-fish (command &optional arg &rest ignored)
   "Complete shell commands and options using Fish shell. See `company's COMMAND ARG and IGNORED for details."
   (interactive (list 'interactive))
@@ -43,6 +45,10 @@
 (defun company-fish--line-beginning-position ()
   (save-excursion (company-fish--bol) (point)))
 
+(defun company-fish--extra-complete (raw-prompt prompt)
+  (-mapcat (lambda (fn) (funcall fn raw-prompt prompt))
+	   company-fish-extra-completion-functions))
+
 (defun company-fish--candidates (callback)
   (let* (;; Keep spaces at the end with OMIT-NULLS=nil in `split-string'.
          (raw-prompt (buffer-substring (company-fish--line-beginning-position)
@@ -69,7 +75,9 @@
                                           (format "-c complete -C'%s'" prompt))
                           (lambda (_ event)
                             (when (s-equals? event "finished\n")
-                              (funcall callback (company-fish--parse buffer)))))))
+			      (funcall callback
+				       (append (company-fish--parse buffer)
+					       (company-fish--extra-complete raw-prompt prompt))))))))
 
 (defun company-fish--parse (buffer)
   (let ((str (s-trim (with-current-buffer buffer
